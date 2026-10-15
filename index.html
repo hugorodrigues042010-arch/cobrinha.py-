@@ -1,0 +1,767 @@
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogo da Cobrinha - Neon Arcade</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts para estilo Arcade Neon -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background-color: #090a10;
+      color: #f1f5f9;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    .font-arcade {
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    /* Brilho Neon e Sombras Personalizadas */
+    .neon-text-green {
+      text-shadow: 0 0 10px rgba(0, 255, 136, 0.7), 0 0 20px rgba(0, 255, 136, 0.4);
+    }
+
+    .neon-text-gold {
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+
+    .neon-box {
+      box-shadow: 0 0 25px rgba(0, 255, 136, 0.25), inset 0 0 15px rgba(0, 255, 136, 0.1);
+      border: 1px solid rgba(0, 255, 136, 0.4);
+    }
+
+    .btn-arcade {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    .btn-arcade:hover:not(:disabled) {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), rgba(6, 182, 212, 0.4));
+      border-color: rgba(16, 185, 129, 0.9);
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn-arcade:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    /* Efeito Glassmorphism para Painéis */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-3 sm:p-6 overflow-x-hidden">
+
+  <!-- Container Principal -->
+  <div class="w-full max-w-lg flex flex-col items-center gap-4 my-auto">
+    
+    <!-- Cabeçalho & Placar -->
+    <header class="w-full flex flex-col items-center gap-3 text-center">
+      <div class="flex items-center justify-between w-full px-2">
+        <h1 class="text-2xl sm:text-3xl font-arcade font-black tracking-wider text-emerald-400 neon-text-green">
+          COBRINHA <span class="text-cyan-400">NEON</span>
+        </h1>
+        
+        <!-- Botão Som Mute/Unmute -->
+        <button id="audioToggleBtn" class="p-2 rounded-xl glass-panel text-slate-300 hover:text-white transition cursor-pointer" title="Ativar/Desativar Som">
+          <svg id="soundIconOn" class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+          </svg>
+          <svg id="soundIconOff" class="w-6 h-6 text-rose-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Placar de Pontuação -->
+      <div class="grid grid-cols-2 gap-3 w-full font-arcade">
+        <div class="glass-panel p-3 rounded-2xl flex flex-col items-center">
+          <span class="text-xs text-slate-400 uppercase tracking-widest">Pontos</span>
+          <span id="scoreText" class="text-2xl sm:text-3xl font-bold text-emerald-400">0</span>
+        </div>
+        <div class="glass-panel p-3 rounded-2xl flex flex-col items-center">
+          <span class="text-xs text-slate-400 uppercase tracking-widest">Recorde</span>
+          <span id="highScoreText" class="text-2xl sm:text-3xl font-bold text-amber-400 neon-text-gold">0</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Barra de Configuração e Ações -->
+    <div class="w-full flex items-center justify-between gap-2 px-1">
+      <!-- Seletor de Dificuldade -->
+      <div class="flex items-center gap-2">
+        <label for="difficultySelect" class="text-xs text-slate-400 uppercase font-semibold">Nível:</label>
+        <select id="difficultySelect" class="bg-slate-900 text-emerald-400 font-semibold text-sm border border-slate-700 rounded-xl px-3 py-1.5 focus:outline-none focus:border-emerald-500 cursor-pointer">
+          <option value="easy">Fácil</option>
+          <option value="medium" selected>Médio</option>
+          <option value="hard">Difícil</option>
+        </select>
+      </div>
+
+      <!-- Botão Pausar / Continuar -->
+      <button id="pauseBtn" disabled class="px-4 py-1.5 rounded-xl btn-arcade text-sm font-semibold font-arcade text-emerald-300 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+        PAUSAR
+      </button>
+    </div>
+
+    <!-- Área Principal do Jogo (Canvas + Modais Overlay) -->
+    <div class="relative w-full max-w-[400px] aspect-square rounded-3xl overflow-hidden neon-box bg-slate-950">
+      
+      <!-- Canvas de Renderização -->
+      <canvas id="gameCanvas" width="400" height="400" class="w-full h-full block"></canvas>
+
+      <!-- Overlay: Início do Jogo -->
+      <div id="startOverlay" class="absolute inset-0 glass-panel flex flex-col items-center justify-center gap-5 p-6 text-center z-10">
+        <div class="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/40 flex items-center justify-center animate-pulse">
+          <svg class="w-10 h-10 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M6.3 2.841A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"></path>
+          </svg>
+        </div>
+        <div>
+          <h2 class="text-2xl font-arcade font-bold text-white mb-1">PRONTO PARA JOGAR?</h2>
+          <p class="text-sm text-slate-300">Usa as setas do teclado, WASD ou os botões no ecrã para controlar.</p>
+        </div>
+        <button id="startBtn" class="w-full py-3 rounded-2xl btn-arcade text-base font-arcade font-bold text-emerald-300 shadow-lg cursor-pointer">
+          INICIAR JOGO
+        </button>
+      </div>
+
+      <!-- Overlay: Jogo Pausado -->
+      <div id="pauseOverlay" class="absolute inset-0 glass-panel flex flex-col items-center justify-center gap-4 p-6 text-center z-10 hidden">
+        <h2 class="text-3xl font-arcade font-bold text-cyan-400">JOGO PAUSADO</h2>
+        <p class="text-sm text-slate-300">Clica para continuar a tua partida</p>
+        <button id="resumeBtn" class="px-8 py-3 rounded-2xl btn-arcade text-base font-arcade font-bold text-emerald-300 cursor-pointer">
+          CONTINUAR
+        </button>
+      </div>
+
+      <!-- Overlay: Game Over -->
+      <div id="gameOverOverlay" class="absolute inset-0 glass-panel flex flex-col items-center justify-center gap-4 p-6 text-center z-10 hidden">
+        <div class="text-rose-500 font-arcade text-3xl font-black tracking-widest animate-bounce">
+          GAME OVER
+        </div>
+        <div class="space-y-1">
+          <p class="text-slate-400 text-xs uppercase tracking-wider">Pontuação Obtida</p>
+          <p id="finalScoreText" class="text-4xl font-arcade font-bold text-white">0</p>
+        </div>
+        <div id="newRecordBadge" class="hidden px-3 py-1 bg-amber-500/20 border border-amber-400/50 rounded-full text-amber-300 text-xs font-arcade animate-pulse">
+          🏆 NOVO RECORDE!
+        </div>
+        <button id="restartBtn" class="w-full py-3 rounded-2xl btn-arcade text-base font-arcade font-bold text-emerald-300 cursor-pointer mt-2">
+          JOGAR NOVAMENTE
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Controlos Touch / Mobile (D-Pad) -->
+    <div class="w-full flex flex-col items-center gap-2 mt-1 sm:hidden">
+      <button id="btnUp" class="w-14 h-14 rounded-2xl glass-panel border border-emerald-500/30 flex items-center justify-center text-emerald-400 active:bg-emerald-500/30 active:scale-95 transition">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 15l7-7 7 7"></path></svg>
+      </button>
+      <div class="flex items-center gap-6">
+        <button id="btnLeft" class="w-14 h-14 rounded-2xl glass-panel border border-emerald-500/30 flex items-center justify-center text-emerald-400 active:bg-emerald-500/30 active:scale-95 transition">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+        <button id="btnRight" class="w-14 h-14 rounded-2xl glass-panel border border-emerald-500/30 flex items-center justify-center text-emerald-400 active:bg-emerald-500/30 active:scale-95 transition">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+      </div>
+      <button id="btnDown" class="w-14 h-14 rounded-2xl glass-panel border border-emerald-500/30 flex items-center justify-center text-emerald-400 active:bg-emerald-500/30 active:scale-95 transition">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+      </button>
+    </div>
+
+    <!-- Instruções rápidas -->
+    <footer class="text-xs text-slate-500 text-center font-medium mt-1">
+      Utiliza as teclas <span class="text-slate-400">Setas</span> ou <span class="text-slate-400">WASD</span> • Pressiona <span class="text-slate-400">Espaço</span> para pausar
+    </footer>
+
+  </div>
+
+  <!-- Código JavaScript do Jogo -->
+  <script>
+    // ==========================================
+    // SISTEMA DE EFEITOS SONOROS (WEB AUDIO API)
+    // ==========================================
+    class SoundEffects {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playEat(isGolden = false) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = isGolden ? 'triangle' : 'sine';
+        if (isGolden) {
+          osc.frequency.setValueAtTime(523.25, now); // Nota C5
+          osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.2); // C6
+        } else {
+          osc.frequency.setValueAtTime(280, now);
+          osc.frequency.exponentialRampToValueAtTime(620, now + 0.1);
+        }
+
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + (isGolden ? 0.25 : 0.12));
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + (isGolden ? 0.25 : 0.12));
+      }
+
+      playGameOver() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
+
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.5);
+      }
+
+      playClick() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.05);
+
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      }
+    }
+
+    const soundFX = new SoundEffects();
+
+    // ==========================================
+    // VARIÁVEIS E CONFIGURAÇÃO DO JOGO
+    // ==========================================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Dimensões da grelha
+    const GRID_SIZE = 20; // 20x20 blocos
+    const TILE_SIZE = canvas.width / GRID_SIZE; // 20px por bloco
+
+    // Elementos de UI
+    const scoreText = document.getElementById('scoreText');
+    const highScoreText = document.getElementById('highScoreText');
+    const finalScoreText = document.getElementById('finalScoreText');
+    const newRecordBadge = document.getElementById('newRecordBadge');
+    
+    const startOverlay = document.getElementById('startOverlay');
+    const pauseOverlay = document.getElementById('pauseOverlay');
+    const gameOverOverlay = document.getElementById('gameOverOverlay');
+
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    const difficultySelect = document.getElementById('difficultySelect');
+    const audioToggleBtn = document.getElementById('audioToggleBtn');
+    const soundIconOn = document.getElementById('soundIconOn');
+    const soundIconOff = document.getElementById('soundIconOff');
+
+    // Estado do Jogo
+    let snake = [];
+    let food = { x: 0, y: 0, isGolden: false };
+    let foodEatenCount = 0;
+    let goldenFoodTimer = 0;
+
+    let dirX = 1;
+    let dirY = 0;
+    let nextDirX = 1;
+    let nextDirY = 0;
+
+    let score = 0;
+    let highScore = localStorage.getItem('snake_neon_highscore') || 0;
+    highScoreText.textContent = highScore;
+
+    let gameState = 'IDLE'; // 'IDLE', 'PLAYING', 'PAUSED', 'GAMEOVER'
+    let lastRenderTime = 0;
+    let speedMs = 100; // Intervalo de atualização em milissegundos
+    let particles = [];
+
+    // Tabela de Velocidades conforme Dificuldade
+    const speeds = {
+      easy: 120,
+      medium: 85,
+      hard: 55
+    };
+
+    // ==========================================
+    // SISTEMA DE PARTÍCULAS
+    // ==========================================
+    function createParticles(x, y, color, count = 10) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 3 + 1;
+        particles.push({
+          x: x * TILE_SIZE + TILE_SIZE / 2,
+          y: y * TILE_SIZE + TILE_SIZE / 2,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          radius: Math.random() * 3 + 2,
+          color: color,
+          alpha: 1,
+          decay: Math.random() * 0.04 + 0.02
+        });
+      }
+    }
+
+    function updateAndDrawParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // ==========================================
+    // LÓGICA DO JOGO
+    // ==========================================
+    function initGame() {
+      snake = [
+        { x: 10, y: 10 },
+        { x: 9, y: 10 },
+        { x: 8, y: 10 }
+      ];
+
+      dirX = 1; dirY = 0;
+      nextDirX = 1; nextDirY = 0;
+
+      score = 0;
+      foodEatenCount = 0;
+      scoreText.textContent = '0';
+      particles = [];
+
+      speedMs = speeds[difficultySelect.value] || 85;
+
+      spawnFood();
+      gameState = 'PLAYING';
+
+      // Esconder Modais
+      startOverlay.classList.add('hidden');
+      pauseOverlay.classList.add('hidden');
+      gameOverOverlay.classList.add('hidden');
+      newRecordBadge.classList.add('hidden');
+
+      pauseBtn.disabled = false;
+      pauseBtn.textContent = 'PAUSAR';
+    }
+
+    function spawnFood() {
+      let validPos = false;
+      let newX, newY;
+
+      while (!validPos) {
+        newX = Math.floor(Math.random() * GRID_SIZE);
+        newY = Math.floor(Math.random() * GRID_SIZE);
+
+        validPos = !snake.some(segment => segment.x === newX && segment.y === newY);
+      }
+
+      // A cada 5 comidas, surge uma Comida Dourada Bónus
+      const isGolden = foodEatenCount > 0 && foodEatenCount % 5 === 0;
+
+      food = {
+        x: newX,
+        y: newY,
+        isGolden: isGolden
+      };
+
+      if (isGolden) {
+        goldenFoodTimer = 60; // Tempo limite para apanhar a comida dourada
+      }
+    }
+
+    function updateGame() {
+      // Atualizar direção confirmada
+      dirX = nextDirX;
+      dirY = nextDirY;
+
+      // Calcular nova posição da cabeça
+      const head = { x: snake[0].x + dirX, y: snake[0].y + dirY };
+
+      // Colisão com as paredes
+      if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+        triggerGameOver();
+        return;
+      }
+
+      // Colisão com o próprio corpo
+      if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        triggerGameOver();
+        return;
+      }
+
+      // Adicionar nova cabeça
+      snake.unshift(head);
+
+      // Verificar colisão com comida
+      if (head.x === food.x && head.y === food.y) {
+        const points = food.isGolden ? 30 : 10;
+        score += points;
+        scoreText.textContent = score;
+
+        if (score > highScore) {
+          highScore = score;
+          highScoreText.textContent = highScore;
+          localStorage.setItem('snake_neon_highscore', highScore);
+        }
+
+        soundFX.playEat(food.isGolden);
+        createParticles(food.x, food.y, food.isGolden ? '#ffd700' : '#ff0055', 15);
+
+        foodEatenCount++;
+        spawnFood();
+      } else {
+        // Remover último segmento se não comeu
+        snake.pop();
+      }
+
+      // Lógica do temporizador da comida dourada
+      if (food.isGolden) {
+        goldenFoodTimer--;
+        if (goldenFoodTimer <= 0) {
+          food.isGolden = false; // Transforma em comida normal
+        }
+      }
+    }
+
+    function triggerGameOver() {
+      gameState = 'GAMEOVER';
+      soundFX.playGameOver();
+
+      createParticles(snake[0].x, snake[0].y, '#00ff88', 25);
+
+      finalScoreText.textContent = score;
+      if (score === highScore && score > 0) {
+        newRecordBadge.classList.remove('hidden');
+      }
+
+      gameOverOverlay.classList.remove('hidden');
+      pauseBtn.disabled = true;
+    }
+
+    // ==========================================
+    // RENDERIZAÇÃO
+    // ==========================================
+    function drawGrid() {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+      ctx.lineWidth = 1;
+
+      for (let i = 0; i <= canvas.width; i += TILE_SIZE) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
+      }
+    }
+
+    function drawSnake() {
+      snake.forEach((segment, index) => {
+        const x = segment.x * TILE_SIZE;
+        const y = segment.y * TILE_SIZE;
+
+        ctx.save();
+        if (index === 0) {
+          // Cabeça da cobra
+          ctx.fillStyle = '#00ff88';
+          ctx.shadowColor = '#00ff88';
+          ctx.shadowBlur = 12;
+
+          // Desenho arredondado da cabeça
+          ctx.beginPath();
+          ctx.roundRect(x + 1, y + 1, TILE_SIZE - 2, TILE_SIZE - 2, 6);
+          ctx.fill();
+
+          // Olhos da cobra
+          ctx.fillStyle = '#090a10';
+          const eyeSize = 3;
+          if (dirX === 1) { // Direita
+            ctx.fillRect(x + 13, y + 5, eyeSize, eyeSize);
+            ctx.fillRect(x + 13, y + 12, eyeSize, eyeSize);
+          } else if (dirX === -1) { // Esquerda
+            ctx.fillRect(x + 4, y + 5, eyeSize, eyeSize);
+            ctx.fillRect(x + 4, y + 12, eyeSize, eyeSize);
+          } else if (dirY === -1) { // Cima
+            ctx.fillRect(x + 5, y + 4, eyeSize, eyeSize);
+            ctx.fillRect(x + 12, y + 4, eyeSize, eyeSize);
+          } else { // Baixo
+            ctx.fillRect(x + 5, y + 13, eyeSize, eyeSize);
+            ctx.fillRect(x + 12, y + 13, eyeSize, eyeSize);
+          }
+        } else {
+          // Corpo da cobra
+          const alpha = Math.max(0.3, 1 - (index / snake.length) * 0.6);
+          ctx.fillStyle = `rgba(0, 230, 118, ${alpha})`;
+          ctx.shadowColor = 'rgba(0, 255, 136, 0.4)';
+          ctx.shadowBlur = 6;
+
+          ctx.beginPath();
+          ctx.roundRect(x + 2, y + 2, TILE_SIZE - 4, TILE_SIZE - 4, 4);
+          ctx.fill();
+        }
+        ctx.restore();
+      });
+    }
+
+    function drawFood() {
+      const x = food.x * TILE_SIZE + TILE_SIZE / 2;
+      const y = food.y * TILE_SIZE + TILE_SIZE / 2;
+      const radius = (TILE_SIZE / 2) - 3;
+
+      ctx.save();
+      if (food.isGolden) {
+        // Comida Dourada Neon
+        ctx.fillStyle = '#ffd700';
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 15;
+
+        ctx.beginPath();
+        ctx.arc(x, y, radius + 1, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Anel pulsante em redor
+        ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, radius + 4, 0, Math.PI * 2);
+        ctx.stroke();
+      } else {
+        // Comida Normal Vermelha/Neon
+        ctx.fillStyle = '#ff0055';
+        ctx.shadowColor = '#ff0055';
+        ctx.shadowBlur = 12;
+
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function renderGame(currentTime) {
+      requestAnimationFrame(renderGame);
+
+      const deltaTime = currentTime - lastRenderTime;
+
+      if (gameState === 'PLAYING') {
+        if (deltaTime >= speedMs) {
+          updateGame();
+          lastRenderTime = currentTime;
+        }
+      }
+
+      // Limpar Canvas
+      ctx.fillStyle = '#090a10';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drawGrid();
+      if (gameState !== 'IDLE') {
+        drawFood();
+        drawSnake();
+      }
+      updateAndDrawParticles();
+    }
+
+    // ==========================================
+    // CONTROLOGOS DE ENTRADA (TECLADO / TOUCH)
+    // ==========================================
+    function handleDirectionChange(newDirX, newDirY) {
+      // Evitar rotação inversa instantânea (ex: ir para a esquerda se estiver a ir para a direita)
+      if (newDirX === -dirX && newDirX !== 0) return;
+      if (newDirY === -dirY && newDirY !== 0) return;
+
+      nextDirX = newDirX;
+      nextDirY = newDirY;
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+        e.preventDefault(); // Prevenir scroll da página
+      }
+
+      if (gameState === 'PLAYING') {
+        switch (e.key) {
+          case 'ArrowUp': case 'w': case 'W':
+            handleDirectionChange(0, -1); break;
+          case 'ArrowDown': case 's': case 'S':
+            handleDirectionChange(0, 1); break;
+          case 'ArrowLeft': case 'a': case 'A':
+            handleDirectionChange(-1, 0); break;
+          case 'ArrowRight': case 'd': case 'D':
+            handleDirectionChange(1, 0); break;
+          case ' ':
+            togglePause(); break;
+        }
+      } else if (gameState === 'PAUSED' && e.key === ' ') {
+        togglePause();
+      }
+    });
+
+    // Controlos Touch nos Botões D-Pad
+    document.getElementById('btnUp').addEventListener('click', () => handleDirectionChange(0, -1));
+    document.getElementById('btnDown').addEventListener('click', () => handleDirectionChange(0, 1));
+    document.getElementById('btnLeft').addEventListener('click', () => handleDirectionChange(-1, 0));
+    document.getElementById('btnRight').addEventListener('click', () => handleDirectionChange(1, 0));
+
+    // Suporte para Gestos Swiping no Canvas
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    canvas.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', (e) => {
+      if (gameState !== 'PLAYING') return;
+
+      const diffX = e.changedTouches[0].clientX - touchStartX;
+      const diffY = e.changedTouches[0].clientY - touchStartY;
+
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        if (Math.abs(diffX) > 20) {
+          handleDirectionChange(diffX > 0 ? 1 : -1, 0);
+        }
+      } else {
+        if (Math.abs(diffY) > 20) {
+          handleDirectionChange(0, diffY > 0 ? 1 : -1);
+        }
+      }
+    }, { passive: true });
+
+    // ==========================================
+    // BOTÕES DE INTERFACE E EVENTOS
+    // ==========================================
+    function togglePause() {
+      if (gameState === 'PLAYING') {
+        gameState = 'PAUSED';
+        pauseOverlay.classList.remove('hidden');
+        pauseBtn.textContent = 'CONTINUAR';
+        soundFX.playClick();
+      } else if (gameState === 'PAUSED') {
+        gameState = 'PLAYING';
+        pauseOverlay.classList.add('hidden');
+        pauseBtn.textContent = 'PAUSAR';
+        soundFX.playClick();
+      }
+    }
+
+    startBtn.addEventListener('click', () => {
+      soundFX.playClick();
+      initGame();
+    });
+
+    pauseBtn.addEventListener('click', togglePause);
+    resumeBtn.addEventListener('click', togglePause);
+
+    restartBtn.addEventListener('click', () => {
+      soundFX.playClick();
+      initGame();
+    });
+
+    audioToggleBtn.addEventListener('click', () => {
+      soundFX.muted = !soundFX.muted;
+      if (soundFX.muted) {
+        soundIconOn.classList.add('hidden');
+        soundIconOff.classList.remove('hidden');
+      } else {
+        soundIconOn.classList.remove('hidden');
+        soundIconOff.classList.add('hidden');
+        soundFX.playClick();
+      }
+    });
+
+    difficultySelect.addEventListener('change', () => {
+      soundFX.playClick();
+      if (gameState === 'PLAYING') {
+        speedMs = speeds[difficultySelect.value] || 85;
+      }
+    });
+
+    // Iniciar loop de animação
+    requestAnimationFrame(renderGame);
+  </script>
+</body>
+</html>
